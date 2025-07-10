@@ -167,7 +167,7 @@ if page == "Home":
             if st.button(f"📚 {topic.capitalize()}", key=f"topic_{topic}"):
                 st.session_state['selected_topic'] = topic
                 st.session_state['page'] = "Video Library"
-                st.experimental_rerun()
+                st.rerun()
 
     # Popular sermons section
     st.header("Popular Sermons")
