@@ -108,8 +108,11 @@ def create_dummy_videos(num_videos=20):
 if 'videos_data' not in st.session_state:
     st.session_state['videos_data'] = create_dummy_videos()
 
+# st.write(st.session_state.videos_data)
+# st.write('dummy')
+
 # Navigation
-page = st.sidebar.radio("Navigation", ["Home", "Video Library", "Curriculum"])
+page = st.sidebar.radio("Navigation", ["Home", "Video Library", "Curriculum"], key='pages_radio')
 
 # Sidebar with channel info
 with st.sidebar:
@@ -260,7 +263,7 @@ elif page == "Curriculum":
     st.title("Sermon Curriculum")
 
     st.write("""
-    Our sermon curriculum organizes messages by topic and year, 
+    Our sermon curriculum organizes messages by topic and year,
     providing a structured way to grow in your faith journey.
     """)
 
@@ -279,38 +282,60 @@ elif page == "Curriculum":
     # For each topic-year group, create a section
     all_topics = sorted(exploded_df['topics_list'].unique())
 
+    # Create expanders for each topic
     for topic in all_topics:
-        st.header(f"{topic.capitalize()}")
+        with st.expander(f"📚 {topic.capitalize()}", expanded=False):
+            # Get years for this topic
+            topic_data = exploded_df[exploded_df['topics_list'] == topic]
+            years = sorted(topic_data['year'].unique(), reverse=True)
 
-        # Get years for this topic
-        topic_data = exploded_df[exploded_df['topics_list'] == topic]
-        years = sorted(topic_data['year'].unique(), reverse=True)
+            # Create nested expanders for each year
+            for year in years:
+                with st.expander(f"📅 {year}", expanded=False):
+                    # Get videos for this topic and year
+                    videos = topic_data[topic_data['year'] == year]
 
-        for year in years:
-            st.subheader(f"{year}")
+                    for _, video in videos.iterrows():
+                        col1, col2, col3 = st.columns([1, 3, 1])
 
-            # Get videos for this topic and year
-            videos = topic_data[topic_data['year'] == year]
+                        with col1:
+                            st.image(video['thumbnail'], width=100)
 
-            for _, video in videos.iterrows():
-                col1, col2 = st.columns([1, 4])
+                        with col2:
+                            st.write(f"**{video['title']}**")
+                            st.caption(f"{video['publish_date']} • {video['duration_minutes']} minutes")
+                            st.write(video['description'][:150] + "..." if len(video['description']) > 150 else video[
+                                'description'])
 
-                with col1:
-                    st.image(video['thumbnail'], width=100)
+                        with col3:
+                            st.button("▶️ Watch", key=f"curriculum_{video['video_id']}_{year}_{topic}")
+                            # st.download_button("📥 Download",
+                            #                    data=b"Dummy sermon notes",
+                            #                    file_name=f"{video['title']}_notes.pdf",
+                            #                    mime="application/pdf",
+                            #                    key=f"download_{video['video_id']}_{year}_{topic}")
 
-                with col2:
-                    st.write(f"**{video['title']}**")
-                    st.caption(f"{video['publish_date']} • {video['duration_minutes']} minutes")
-                    st.button("Watch", key=f"curriculum_{video['video_id']}")
+                    # Add a note about the number of sermons
+                    st.info(f"{len(videos)} sermons on {topic} from {year}")
 
-            st.divider()
-
-        st.divider()
-
+            # Add a summary for this topic
+            total_topic_sermons = len(topic_data)
+            years_covered = ", ".join(years)
+            st.write(f"**Summary:** {total_topic_sermons} sermons on {topic} from {years_covered}")
+    st.divider()
     # Add download button for the curriculum
     st.download_button(
-        label="Download Curriculum (PDF)",
+        label="📥 Download Complete Curriculum (PDF)",
         data=b"Dummy PDF content",
         file_name="sermon_curriculum.pdf",
         mime="application/pdf"
     )
+
+    # st.divider()
+    # # Add download button for the curriculum
+    # st.download_button(
+    #     label="Download Curriculum (PDF)",
+    #     data=b"Dummy PDF content",
+    #     file_name="sermon_curriculum.pdf",
+    #     mime="application/pdf"
+    # )
