@@ -138,7 +138,7 @@ if page == "Home":
     latest_video = st.session_state['videos_data'].iloc[0]
 
     st.header("Latest Sermon")
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns([1, 3])
 
     with col1:
         st.image(latest_video['thumbnail'])
@@ -150,24 +150,12 @@ if page == "Home":
         st.write(f"**Topics:** {latest_video['topics']}")
         st.button("▶️ Watch Now", key="watch_latest")
 
-    # Topic exploration section
-    st.header("Explore by Topic")
 
     # Extract all unique topics
     all_topics = []
     for topics in st.session_state['videos_data']['topics_list']:
         all_topics.extend(topics)
     unique_topics = sorted(list(set(all_topics)))
-
-    # Create topic buttons in rows of 4
-    cols = st.columns(4)
-    for i, topic in enumerate(unique_topics):
-        col_idx = i % 4
-        with cols[col_idx]:
-            if st.button(f"📚 {topic.capitalize()}", key=f"topic_{topic}"):
-                st.session_state['selected_topic'] = topic
-                st.session_state['page'] = "Video Library"
-                st.rerun()
 
     # Popular sermons section
     st.header("Popular Sermons")
@@ -186,9 +174,62 @@ if page == "Home":
             st.write(f"**Topics:** {video['topics']}")
             st.button("Watch", key=f"watch_popular_{i}")
 
-    # Recent sermon series
-    st.header("Recent Series")
-    st.info("Coming soon: Organized sermon series")
+
+    # Replace the "Explore by Topic" section with "Popular Topics" using pills
+    st.header("Popular Topics")
+
+    # Extract all unique topics
+    all_topics = []
+    for topics in st.session_state['videos_data']['topics_list']:
+        all_topics.extend(topics)
+
+    # Count occurrences of each topic
+    topic_counts = {}
+    for topic in all_topics:
+        if topic in topic_counts:
+            topic_counts[topic] += 1
+        else:
+            topic_counts[topic] = 1
+
+    # Sort topics by popularity (count)
+    sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)
+    popular_topics = [topic for topic, count in sorted_topics[:8]]  # Get top 8 most popular topics
+
+    # Use pills for topic selection
+    selected_topic = st.pills(
+        label="Select a topic to explore",
+        options=[topic.capitalize() for topic in popular_topics],
+        label_visibility="collapsed"
+    )
+
+    # Display videos for selected topic if a pill is selected
+    if selected_topic:
+        selected_topic_lower = selected_topic.lower()
+        st.subheader(f"{selected_topic} Sermons")
+
+        # Filter videos by the selected topic
+        topic_videos = st.session_state['videos_data'][
+            st.session_state['videos_data']['topics_list'].apply(lambda x: selected_topic_lower in x)
+        ].head(3)  # Show top 3 videos for this topic
+
+        for i, (_, video) in enumerate(topic_videos.iterrows()):
+            col1, col2 = st.columns([1, 3])
+
+            with col1:
+                st.image(video['thumbnail'], width=150)
+
+            with col2:
+                st.subheader(video['title'])
+                st.caption(f"Published: {video['publish_date']} • {video['duration_minutes']} minutes")
+                st.write(
+                    video['description'][:100] + "..." if len(video['description']) > 100 else video['description'])
+                st.button("▶️ Watch", key=f"topic_video_{i}")
+
+        # Add a "See all" button to go to the Video Library with this topic selected
+        if st.button(f"See all {selected_topic} sermons"):
+            st.session_state['selected_topic'] = selected_topic_lower
+            st.session_state['page'] = "Video Library"
+            st.rerun()
 
 # Video Library Page
 elif page == "Video Library":
