@@ -116,7 +116,7 @@ page = st.sidebar.radio("Navigation", ["Home", "Video Library", "Curriculum"], k
 
 # Sidebar with channel info
 with st.sidebar:
-    st.title("Pastor Smith's Sermons")
+    st.title("Apostle Arome Osayi Sermons")
     st.write("Welcome to our sermon library where you can explore teachings on various topics.")
 
     st.divider()
@@ -263,8 +263,7 @@ elif page == "Curriculum":
     st.title("Sermon Curriculum")
 
     st.write("""
-    Our sermon curriculum organizes messages by topic and year,
-    providing a structured way to grow in your faith journey.
+    Our sermon curriculum organizes messages by topic and year.
     """)
 
     # Create curriculum from the data
