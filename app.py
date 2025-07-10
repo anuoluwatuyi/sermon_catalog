@@ -5,36 +5,16 @@ import random
 
 # Page configuration
 st.set_page_config(
-    page_title="Sermon Analyzer",
+    page_title="Sermon Library",
     page_icon="🙏",
     layout="wide"
 )
 
-# App title and description
-st.title("Sermon Analyzer")
-st.markdown("""
-This app helps analyze sermon videos from a YouTube channel. 
-- Extract and analyze sermon content
-- Classify sermons by topics
-- Generate sermon curriculum
-""")
 
-# Sidebar for configuration
-with st.sidebar:
-    st.title("Configuration")
-    api_key = st.text_input("YouTube API Key", placeholder="Enter your API key", type="password",
-                            value="dummy-api-key-for-testing")
-    channel_id = st.text_input("YouTube Channel ID", placeholder="Enter channel ID",
-                               value="UC123456789")
-
-    st.subheader("Topic Settings")
-    default_topics = ["faith", "prayer", "salvation", "love", "forgiveness", "hope"]
-    topics_text = st.text_area("Topics (one per line)", "\n".join(default_topics))
-
-
-# Create dummy data
-def create_dummy_videos(num_videos=10):
+# Create dummy data for demonstration
+def create_dummy_videos(num_videos=20):
     video_ids = [f"vid{i}" for i in range(1, num_videos + 1)]
+
     titles = [
         "Finding Faith in Difficult Times",
         "The Power of Prayer",
@@ -45,7 +25,17 @@ def create_dummy_videos(num_videos=10):
         "The Grace of God",
         "Finding Strength in Weakness",
         "Walking in Obedience",
-        "The Promise of Salvation"
+        "The Promise of Salvation",
+        "Overcoming Fear",
+        "The Kingdom of God",
+        "Worship as a Lifestyle",
+        "God's Faithfulness",
+        "The Fruit of the Spirit",
+        "Spiritual Disciplines",
+        "Understanding Scripture",
+        "Serving Others",
+        "Marriage and Family",
+        "Stewardship and Generosity"
     ]
 
     descriptions = [
@@ -58,26 +48,48 @@ def create_dummy_videos(num_videos=10):
         "Understanding the depth and breadth of God's grace.",
         "Why our weaknesses are opportunities for God's strength to be displayed.",
         "The importance of obedience in the Christian life.",
-        "Understanding the gift of salvation and its implications."
+        "Understanding the gift of salvation and its implications.",
+        "Breaking free from fear and anxiety through faith.",
+        "Understanding the principles of God's kingdom.",
+        "How worship extends beyond Sunday services.",
+        "Stories and lessons about God's faithfulness.",
+        "Developing the fruit of the Spirit in everyday life.",
+        "Practices that deepen your relationship with God.",
+        "How to read and apply Scripture effectively.",
+        "The importance of serving others in the Christian life.",
+        "Biblical principles for healthy family relationships.",
+        "Managing resources according to biblical principles."
     ]
 
-    # Generate random dates within the last 3 years
+    # Generate random dates within the last 3 years, sorted from newest to oldest
     current_date = datetime.datetime.now()
     dates = []
-    for _ in range(num_videos):
-        days_back = random.randint(1, 1095)  # Up to 3 years
+    for i in range(num_videos):
+        days_back = i * 30 + random.randint(0, 15)  # Roughly monthly sermons with some variation
         random_date = current_date - datetime.timedelta(days=days_back)
         dates.append(random_date.strftime("%Y-%m-%d"))
 
-    # Assign random topics to each video
+    # Define topics
+    all_topics = ["faith", "prayer", "salvation", "love", "forgiveness", "hope",
+                  "worship", "family", "service", "scripture", "stewardship"]
+
+    # Assign topics to each video
     topics_list = []
+    topics_detailed = []
     for _ in range(num_videos):
         num_topics = random.randint(1, 3)
-        topics = random.sample(default_topics, num_topics)
+        topics = random.sample(all_topics, num_topics)
         topics_list.append(", ".join(topics))
+        topics_detailed.append(topics)
 
     # Create thumbnails (just URLs for dummy data)
     thumbnails = [f"https://img.youtube.com/vi/dummy{i}/0.jpg" for i in range(1, num_videos + 1)]
+
+    # Create view counts
+    views = [random.randint(100, 5000) for _ in range(num_videos)]
+
+    # Duration in minutes
+    durations = [random.randint(20, 60) for _ in range(num_videos)]
 
     return pd.DataFrame({
         'video_id': video_ids,
@@ -85,163 +97,220 @@ def create_dummy_videos(num_videos=10):
         'description': descriptions[:num_videos],
         'publish_date': dates,
         'topics': topics_list,
-        'thumbnail': thumbnails
+        'topics_list': topics_detailed,
+        'thumbnail': thumbnails,
+        'views': views,
+        'duration_minutes': durations
     })
 
 
-# Create dummy data
-dummy_videos = create_dummy_videos()
+# Create dummy data if not already in session state
+if 'videos_data' not in st.session_state:
+    st.session_state['videos_data'] = create_dummy_videos()
 
-# Main app tabs
-tab1, tab2, tab3, tab4 = st.tabs([
-    "Fetch Videos", "Analyze Videos", "View Database", "Generate Curriculum"
-])
+# Navigation
+page = st.sidebar.radio("Navigation", ["Home", "Video Library", "Curriculum"])
 
-# Fetch Videos Tab
-with tab1:
-    st.header("Fetch Videos from YouTube")
+# Sidebar with channel info
+with st.sidebar:
+    st.title("Pastor Smith's Sermons")
+    st.write("Welcome to our sermon library where you can explore teachings on various topics.")
 
-    st.info("This is a demo version with dummy data. API functionality will be implemented later.")
+    st.divider()
 
-    if st.button("Fetch Demo Videos"):
-        st.session_state['fetched_videos'] = dummy_videos
-        st.success(f"Successfully fetched {len(dummy_videos)} demo videos!")
+    st.metric("Total Sermons", len(st.session_state['videos_data']))
 
-        # Display fetched videos
-        for _, video in dummy_videos.iterrows():
-            col1, col2 = st.columns([1, 3])
-            with col1:
-                st.image(video["thumbnail"], width=120)
-                st.markdown(f"[Watch Video](https://www.youtube.com/watch?v={video['video_id']})")
-            with col2:
-                st.subheader(video["title"])
-                st.caption(f"Published: {video['publish_date']}")
-                st.write(video["description"])
+    # Latest video update
+    latest_date = max(st.session_state['videos_data']['publish_date'])
+    st.write(f"Latest sermon: {latest_date}")
 
-# Analyze Videos Tab
-with tab2:
-    st.header("Analyze Videos")
+    st.divider()
+    st.write("© 2025 Our Church")
 
-    if 'fetched_videos' not in st.session_state:
-        st.info("Please fetch videos from the 'Fetch Videos' tab first.")
-    else:
-        video_titles = st.session_state['fetched_videos']['title'].tolist()
-        selected_title = st.selectbox("Select a video to analyze", video_titles)
+# Home Page
+if page == "Home":
+    st.title("Welcome to Our Sermon Library")
 
-        selected_video = \
-        st.session_state['fetched_videos'][st.session_state['fetched_videos']['title'] == selected_title].iloc[0]
+    # Featured/Latest sermon
+    latest_video = st.session_state['videos_data'].iloc[0]
 
-        st.subheader(selected_title)
-        st.write(f"**Published:** {selected_video['publish_date']}")
+    st.header("Latest Sermon")
+    col1, col2 = st.columns([1, 2])
 
-        # Create dummy placeholder for video
-        st.image(selected_video['thumbnail'], width=400)
-        st.caption("Dummy video placeholder - actual video player will be implemented later")
+    with col1:
+        st.image(latest_video['thumbnail'])
 
-        if st.button("Process Video"):
-            st.success("Video processed successfully!")
+    with col2:
+        st.subheader(latest_video['title'])
+        st.caption(f"Published: {latest_video['publish_date']} • {latest_video['duration_minutes']} minutes")
+        st.write(latest_video['description'])
+        st.write(f"**Topics:** {latest_video['topics']}")
+        st.button("▶️ Watch Now", key="watch_latest")
 
-            # Dummy subtitle text
-            subtitle_text = "This is a sample transcript. It contains words like faith, prayer, and love. The sermon talks about the importance of salvation and how forgiveness leads to spiritual growth. We should always have hope in difficult times."
+    # Topic exploration section
+    st.header("Explore by Topic")
 
-            # Extract topics from the dummy subtitle
-            topics = [topic for topic in default_topics if topic in subtitle_text]
+    # Extract all unique topics
+    all_topics = []
+    for topics in st.session_state['videos_data']['topics_list']:
+        all_topics.extend(topics)
+    unique_topics = sorted(list(set(all_topics)))
 
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("Detected Topics")
-                for topic in topics:
-                    st.write(f"- {topic}")
+    # Create topic buttons in rows of 4
+    cols = st.columns(4)
+    for i, topic in enumerate(unique_topics):
+        col_idx = i % 4
+        with cols[col_idx]:
+            if st.button(f"📚 {topic.capitalize()}", key=f"topic_{topic}"):
+                st.session_state['selected_topic'] = topic
+                st.session_state['page'] = "Video Library"
+                st.experimental_rerun()
 
-            with col2:
-                # Let user edit topics
-                st.subheader("Edit Topics")
-                edited_topics_text = st.text_area("Edit topics (one per line)", "\n".join(topics))
+    # Popular sermons section
+    st.header("Popular Sermons")
+    popular_videos = st.session_state['videos_data'].sort_values('views', ascending=False).head(3)
 
-# View Database Tab
-with tab3:
-    st.header("View Database")
+    for i, (_, video) in enumerate(popular_videos.iterrows()):
+        col1, col2 = st.columns([1, 3])
 
-    st.info("This is a demo version. Database functionality will be implemented later.")
+        with col1:
+            st.image(video['thumbnail'])
 
-    # Use the dummy data for database view as well
-    if 'fetched_videos' in st.session_state:
-        # Display statistics
-        total_videos = len(st.session_state['fetched_videos'])
-        st.metric("Total Videos", total_videos)
+        with col2:
+            st.subheader(video['title'])
+            st.caption(f"Published: {video['publish_date']} • {video['views']} views")
+            st.write(video['description'][:100] + "..." if len(video['description']) > 100 else video['description'])
+            st.write(f"**Topics:** {video['topics']}")
+            st.button("Watch", key=f"watch_popular_{i}")
 
-        # Show data table
-        st.subheader("Stored Videos")
-        st.dataframe(st.session_state['fetched_videos'][['video_id', 'title', 'publish_date', 'topics']])
+    # Recent sermon series
+    st.header("Recent Series")
+    st.info("Coming soon: Organized sermon series")
 
-        # Show video details on select
-        video_ids = st.session_state['fetched_videos']['video_id'].tolist()
-        titles = st.session_state['fetched_videos']['title'].tolist()
-        video_options = {vid: title for vid, title in zip(video_ids, titles)}
+# Video Library Page
+elif page == "Video Library":
+    st.title("Video Library")
 
-        selected_video_id = st.selectbox("Select a video to view details",
-                                         options=video_ids,
-                                         format_func=lambda x: video_options[x])
+    # Filter options
+    col1, col2 = st.columns(2)
 
-        if selected_video_id:
-            video_data = st.session_state['fetched_videos'][
-                st.session_state['fetched_videos']['video_id'] == selected_video_id].iloc[0]
+    with col1:
+        # Check if there's a selected topic from the home page
+        default_topic = st.session_state.get('selected_topic', "All")
 
-            st.subheader(video_data['title'])
-            st.write(f"**Published:** {video_data['publish_date']}")
-            st.write(f"**Topics:** {video_data['topics']}")
+        # Extract all unique topics
+        all_topics = []
+        for topics in st.session_state['videos_data']['topics_list']:
+            all_topics.extend(topics)
+        unique_topics = sorted(list(set(all_topics)))
 
-            with st.expander("Description"):
-                st.write(video_data['description'])
+        # Add "All" option
+        filter_options = ["All"] + unique_topics
+        selected_topic = st.selectbox("Filter by Topic",
+                                      options=filter_options,
+                                      index=filter_options.index(
+                                          default_topic) if default_topic in filter_options else 0)
 
-            with st.expander("Subtitle Text (Dummy)"):
-                st.write(
-                    "This is a placeholder for the video's transcript. In the actual app, this would contain the full transcript of the sermon.")
+    with col2:
+        sort_by = st.selectbox("Sort by", ["Newest First", "Oldest First", "Most Viewed", "Title A-Z"])
 
-            st.image(video_data['thumbnail'], width=400)
-    else:
-        st.info("No videos in the database yet. Process some videos first.")
+    # Apply filters and sorting
+    filtered_data = st.session_state['videos_data'].copy()
 
-# Generate Curriculum Tab
-with tab4:
-    st.header("Generate Sermon Curriculum")
+    if selected_topic != "All":
+        filtered_data = filtered_data[filtered_data['topics_list'].apply(lambda x: selected_topic in x)]
 
-    if st.button("Generate Curriculum"):
-        # Create a dummy curriculum
-        curriculum = """
-# Sermon Curriculum
+    if sort_by == "Newest First":
+        filtered_data = filtered_data.sort_values('publish_date', ascending=False)
+    elif sort_by == "Oldest First":
+        filtered_data = filtered_data.sort_values('publish_date', ascending=True)
+    elif sort_by == "Most Viewed":
+        filtered_data = filtered_data.sort_values('views', ascending=False)
+    elif sort_by == "Title A-Z":
+        filtered_data = filtered_data.sort_values('title')
 
-## Faith (2024)
-- [Finding Faith in Difficult Times](https://www.youtube.com/watch?v=vid1)
-- [Walking in Obedience](https://www.youtube.com/watch?v=vid9)
+    # Display filter results
+    st.write(f"Found {len(filtered_data)} sermons")
 
-## Prayer (2024)
-- [The Power of Prayer](https://www.youtube.com/watch?v=vid2)
-- [Finding Strength in Weakness](https://www.youtube.com/watch?v=vid8)
+    # Display videos in a grid
+    for i in range(0, len(filtered_data), 2):
+        cols = st.columns(2)
 
-## Love (2023)
-- [Understanding God's Love](https://www.youtube.com/watch?v=vid3)
-- [The Grace of God](https://www.youtube.com/watch?v=vid7)
+        for j in range(2):
+            if i + j < len(filtered_data):
+                video = filtered_data.iloc[i + j]
+                with cols[j]:
+                    st.image(video['thumbnail'], width=250)
+                    st.subheader(video['title'])
+                    st.caption(f"Published: {video['publish_date']} • {video['duration_minutes']} minutes")
+                    st.write(
+                        video['description'][:150] + "..." if len(video['description']) > 150 else video['description'])
+                    st.write(f"**Topics:** {video['topics']}")
 
-## Forgiveness (2023)
-- [Forgiveness: The Path to Freedom](https://www.youtube.com/watch?v=vid4)
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.button("Watch", key=f"watch_{i}_{j}")
+                    with col2:
+                        st.button("Save", key=f"save_{i}_{j}")
 
-## Hope (2022)
-- [Hope in the Midst of Trials](https://www.youtube.com/watch?v=vid5)
-- [Living a Life of Purpose](https://www.youtube.com/watch?v=vid6)
+                    st.divider()
 
-## Salvation (2022)
-- [The Promise of Salvation](https://www.youtube.com/watch?v=vid10)
-"""
-        st.session_state['curriculum'] = curriculum
+# Curriculum Page
+elif page == "Curriculum":
+    st.title("Sermon Curriculum")
 
-    if 'curriculum' in st.session_state:
-        st.markdown(st.session_state['curriculum'])
+    st.write("""
+    Our sermon curriculum organizes messages by topic and year, 
+    providing a structured way to grow in your faith journey.
+    """)
 
-        # Download option
-        st.download_button(
-            label="Download Curriculum",
-            data=st.session_state['curriculum'],
-            file_name="sermon_curriculum.md",
-            mime="text/markdown"
-        )
+    # Create curriculum from the data
+    videos_df = st.session_state['videos_data'].copy()
+
+    # Extract year from publish_date
+    videos_df['year'] = videos_df['publish_date'].apply(lambda x: x.split('-')[0])
+
+    # Explode the topics_list to have one row per video-topic pair
+    exploded_df = videos_df.explode('topics_list')
+
+    # Group by topic and year
+    grouped = exploded_df.groupby(['topics_list', 'year'])
+
+    # For each topic-year group, create a section
+    all_topics = sorted(exploded_df['topics_list'].unique())
+
+    for topic in all_topics:
+        st.header(f"{topic.capitalize()}")
+
+        # Get years for this topic
+        topic_data = exploded_df[exploded_df['topics_list'] == topic]
+        years = sorted(topic_data['year'].unique(), reverse=True)
+
+        for year in years:
+            st.subheader(f"{year}")
+
+            # Get videos for this topic and year
+            videos = topic_data[topic_data['year'] == year]
+
+            for _, video in videos.iterrows():
+                col1, col2 = st.columns([1, 4])
+
+                with col1:
+                    st.image(video['thumbnail'], width=100)
+
+                with col2:
+                    st.write(f"**{video['title']}**")
+                    st.caption(f"{video['publish_date']} • {video['duration_minutes']} minutes")
+                    st.button("Watch", key=f"curriculum_{video['video_id']}")
+
+            st.divider()
+
+        st.divider()
+
+    # Add download button for the curriculum
+    st.download_button(
+        label="Download Curriculum (PDF)",
+        data=b"Dummy PDF content",
+        file_name="sermon_curriculum.pdf",
+        mime="application/pdf"
+    )
